@@ -1,0 +1,49 @@
+{
+  "project": "EventMap Chihuahua",
+  "backend": {
+    "description": "API en Flask con OpenStreetMap (geopy)",
+    "dependencies": [
+      "flask",
+      "python-dotenv",
+      "geopy",
+      "flask-cors"
+    ],
+    "files": [
+      {
+        "filename": ".env",
+        "path": "EventMap-Backend/.env",
+        "content": "FLASK_ENV=development\nPORT=5000\nDATABASE_URI=sqlite:///events.db"
+      },
+      {
+        "filename": "app.py",
+        "path": "EventMap-Backend/app.py",
+        "content": "import os\nfrom flask import Flask, request, jsonify\nfrom flask_cors import CORS\nfrom dotenv import load_dotenv\nfrom geopy.distance import geodesic\n\nload_dotenv()\n\napp = Flask(__name__)\nCORS(app)\n\nevents_db = [\n    {\"id\": 1, \"name\": \"Concierto Rock\", \"latitude\": 28.6353, \"longitude\": -106.0889, \"date\": \"2026-07-10\", \"category\": \"Música\"},\n    {\"id\": 2, \"name\": \"Feria del Hueso\", \"latitude\": 28.6200, \"longitude\": -106.0700, \"date\": \"2026-11-02\", \"category\": \"Cultura\"}\n]\n\n@app.route('/events/nearby', methods=['GET'])\ndef get_nearby_events():\n    user_lat = request.args.get('lat', type=float)\n    user_lng = request.args.get('lng', type=float)\n    if not user_lat or not user_lng:\n        return jsonify({\"error\": \"Faltan coordenadas\"}), 400\n    user_coords = (user_lat, user_lng)\n    nearby_events = []\n    for event in events_db:\n        event_coords = (event['latitude'], event['longitude'])\n        distance_km = geodesic(user_coords, event_coords).kilometers\n        if distance_km <= 10:\n            event_data = event.copy()\n            event_data['distance'] = f\"{distance_km:.2f} km\"\n            nearby_events.append(event_data)\n    return jsonify(nearby_events)\n\nif __name__ == '__main__':\n    port = int(os.getenv('PORT', 5000))\n    app.run(host='0.0.0.0', port=port, debug=True)"
+      }
+    ]
+  },
+  "frontend": {
+    "description": "Aplicación en React Native con Expo",
+    "files": [
+      {
+        "filename": ".env",
+        "path": "EventMapChihuahua/.env",
+        "content": "EXPO_PUBLIC_API_URL=http://192.168.1.100:5000"
+      },
+      {
+        "filename": "client.ts",
+        "path": "EventMapChihuahua/src/api/client.ts",
+        "content": "import axios from 'axios';\n\nconst API_URL = process.env.EXPO_PUBLIC_API_URL;\n\nexport const api = axios.create({\n  baseURL: API_URL,\n  timeout: 5000,\n  headers: {\n    'Content-Type': 'application/json',\n  },\n});"
+      },
+      {
+        "filename": "HomeScreen.tsx",
+        "path": "EventMapChihuahua/src/screens/HomeScreen.tsx",
+        "content": "import React, { useEffect } from 'react';\nimport { View, FlatList, StyleSheet, ActivityIndicator, Text } from 'react-native';\nimport { EventCard } from '../components/EventCard';\nimport { useEvents } from '../hooks/useEvents';\nimport { useLocation } from '../hooks/useLocation';\n\nexport default function HomeScreen({ navigation }: any) {\n  const { location } = useLocation();\n  const { events, loadNearbyEvents, isLoadingEvents } = useEvents();\n\n  useEffect(() => {\n    if (location) {\n      loadNearbyEvents(location.coords.latitude, location.coords.longitude);\n    }\n  }, [location, loadNearbyEvents]);\n\n  if (isLoadingEvents && events.length === 0) {\n    return (\n      <View style={styles.center}>\n        <ActivityIndicator size=\"large\" color=\"#1E90FF\" />\n      </View>\n    );\n  }\n\n  return (\n    <View style={styles.container}>\n      <Text style={styles.header}>Eventos cerca de ti</Text>\n      <FlatList\n        data={events}\n        keyExtractor={(item) => item.id.toString()}\n        renderItem={({ item }) => (\n          <EventCard \n            event={item} \n            onPress={() => navigation.navigate('EventDetail', { event: item })} \n          />\n        )}\n        contentContainerStyle={styles.list}\n      />\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  container: { flex: 1, backgroundColor: '#F5F5F5' },\n  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },\n  header: { fontSize: 22, fontWeight: 'bold', margin: 16, color: '#333' },\n  list: { paddingBottom: 20 },\n});"
+      },
+      {
+        "filename": "EventDetailScreen.tsx",
+        "path": "EventMapChihuahua/src/screens/EventDetailScreen.tsx",
+        "content": "import React from 'react';\nimport { View, Text, StyleSheet, Button } from 'react-native';\n\nexport default function EventDetailScreen({ route, navigation }: any) {\n  const { event } = route.params;\n\n  return (\n    <View style={styles.container}>\n      <Text style={styles.title}>{event.name}</Text>\n      \n      <View style={styles.card}>\n        <Text style={styles.info}>📅 Fecha: {event.date}</Text>\n        {event.category && <Text style={styles.info}>🏷️ Categoría: {event.category}</Text>}\n        {event.distance && <Text style={styles.info}>📍 Distancia: {event.distance}</Text>}\n        \n        <View style={styles.mapPlaceholder}>\n          <Text style={styles.placeholderText}>Aquí puedes añadir un mini mapa del evento</Text>\n        </View>\n      </View>\n\n      <Button \n        title=\"Volver al Mapa\" \n        onPress={() => navigation.navigate('Map')} \n      />\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  container: { flex: 1, padding: 16, backgroundColor: '#F5F5F5' },\n  title: { fontSize: 26, fontWeight: 'bold', marginBottom: 16, color: '#333' },\n  card: { backgroundColor: '#FFF', padding: 20, borderRadius: 12, elevation: 3, marginBottom: 20 },\n  info: { fontSize: 16, marginBottom: 10, color: '#555' },\n  mapPlaceholder: { height: 150, backgroundColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center', borderRadius: 8, marginTop: 10 },\n  placeholderText: { color: '#888' }\n});"
+      }
+    ]
+  }
+}
