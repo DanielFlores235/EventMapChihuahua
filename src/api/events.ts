@@ -26,6 +26,21 @@ export const createEvent = async (eventData: Omit<Event, 'id'>): Promise<Event> 
 };
 
 /**
+ * Actualizar un evento (PUT /events/:id)
+ */
+export const updateEvent = async (id: number, eventData: Partial<Event>): Promise<Event> => {
+  const response = await api.put<Event>(`/events/${id}`, eventData);
+  return response.data;
+};
+
+/**
+ * Eliminar un evento (DELETE /events/:id)
+ */
+export const deleteEvent = async (id: number): Promise<void> => {
+  await api.delete(`/events/${id}`);
+};
+
+/**
  * Obtener eventos por categoría (GET /events/category/:category)
  */
 export const getEventsByCategory = async (category: string): Promise<Event[]> => {

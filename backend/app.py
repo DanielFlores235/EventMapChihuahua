@@ -44,8 +44,6 @@ def init_db():
         )
     ''')
     
-<<<<<<< Updated upstream
-=======
     # Crear la tabla de centros turísticos
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS tourist_spots (
@@ -66,8 +64,6 @@ def init_db():
         cursor.execute("ALTER TABLE events ADD COLUMN start_time TEXT")
     if 'end_time' not in columns:
         cursor.execute("ALTER TABLE events ADD COLUMN end_time TEXT")
-    
->>>>>>> Stashed changes
     # Comprobar si hay registros. Si no los hay, sembramos datos iniciales.
     cursor.execute('SELECT COUNT(*) FROM events')
     if cursor.fetchone()[0] == 0:

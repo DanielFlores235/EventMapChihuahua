@@ -10,24 +10,23 @@ import {
   Platform 
 } from 'react-native';
 import MapComponent from '../components/MapComponent';
-<<<<<<< Updated upstream
-import { createEvent, geocodeAddress, reverseGeocode } from '../api/events';
-=======
 import { createEvent, updateEvent, geocodeAddress, reverseGeocode } from '../api/events';
 import { Ionicons } from '@expo/vector-icons';
->>>>>>> Stashed changes
 
 const CATEGORIES = ['Música', 'Cultura', 'Tecnología', 'Deportes', 'Otros'];
 
 export default function CreateEventScreen({ navigation, route }: any) {
-  // Coordenadas iniciales (Centro de Chihuahua)
-  const initialLat = route.params?.latitude ?? 28.6353;
-  const initialLng = route.params?.longitude ?? -106.0889;
+  // Coordenadas iniciales (Centro de Chihuahua) o las del evento a editar
+  const editingEvent = route.params?.event;
+  const initialLat = editingEvent?.latitude ?? route.params?.latitude ?? 28.6353;
+  const initialLng = editingEvent?.longitude ?? route.params?.longitude ?? -106.0889;
 
   const [name, setName] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]); // Formato YYYY-MM-DD
   const [category, setCategory] = useState('Otros');
   const [address, setAddress] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [latitude, setLatitude] = useState<number>(initialLat);
   const [longitude, setLongitude] = useState<number>(initialLng);
   
@@ -143,8 +142,6 @@ export default function CreateEventScreen({ navigation, route }: any) {
           onChangeText={setDate}
         />
 
-<<<<<<< Updated upstream
-=======
         {/* Horarios */}
         <View style={styles.timeRow}>
           <View style={[styles.timeInputContainer, { marginRight: 8 }]}>
@@ -168,8 +165,6 @@ export default function CreateEventScreen({ navigation, route }: any) {
             />
           </View>
         </View>
-
->>>>>>> Stashed changes
         {/* Categorías */}
         <Text style={styles.label}><Ionicons name="pricetag" size={14} color="#CBD5E1" /> Categoría</Text>
         <View style={styles.categoryContainer}>
@@ -320,6 +315,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#F8FAFC',
     marginBottom: 16,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  timeInputContainer: {
+    flex: 1,
   },
   categoryContainer: {
     flexDirection: 'row',

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Event } from '../types';
-import { getNearbyEvents, createEvent as createEventApi, updateEvent as updateEventApi, deleteEvent as deleteEventApi } from '../api/events';
+import { getNearbyEvents, getAllEvents, createEvent as createEventApi, updateEvent as updateEventApi, deleteEvent as deleteEventApi } from '../api/events';
 
 export const useEvents = () => {
   // Estados para almacenar la data, el progreso y los errores
@@ -19,6 +19,19 @@ export const useEvents = () => {
       setEvents(data);
     } catch (error) {
       setEventsError('No se pudieron cargar los eventos de Chihuahua. Verifica tu conexión.');
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  }, []);
+
+  const loadAllEvents = useCallback(async () => {
+    setIsLoadingEvents(true);
+    setEventsError(null);
+    try {
+      const data = await getAllEvents();
+      setEvents(data);
+    } catch (error) {
+      setEventsError('No se pudieron cargar los eventos. Verifica tu conexión.');
     } finally {
       setIsLoadingEvents(false);
     }
@@ -62,6 +75,7 @@ export const useEvents = () => {
     isLoadingEvents, 
     eventsError, 
     loadNearbyEvents,
+    loadAllEvents,
     createEvent,
     updateEvent,
     deleteEvent

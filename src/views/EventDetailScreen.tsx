@@ -1,11 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import MapComponent from '../components/MapComponent';
-<<<<<<< Updated upstream
-=======
 import { deleteEvent } from '../api/events';
 import { Ionicons } from '@expo/vector-icons';
->>>>>>> Stashed changes
+import { Alert } from 'react-native';
 
 export default function EventDetailScreen({ route, navigation }: any) {
   // Recibimos el evento por los parámetros de navegación
@@ -16,6 +14,25 @@ export default function EventDetailScreen({ route, navigation }: any) {
     longitude: event.longitude,
     latitudeDelta: 0.015, // Más Zoom para ver las calles del evento
     longitudeDelta: 0.015,
+  };
+
+  const handleEdit = () => {
+    navigation.navigate('CreateEvent', { event });
+  };
+
+  const handleDelete = () => {
+    Alert.alert('Eliminar Evento', '¿Estás seguro de que deseas eliminar este evento?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Eliminar', style: 'destructive', onPress: async () => {
+          try {
+            await deleteEvent(event.id);
+            navigation.goBack();
+          } catch (e) {
+            console.error('Error deleting event', e);
+          }
+        } 
+      }
+    ]);
   };
 
   return (
@@ -41,8 +58,6 @@ export default function EventDetailScreen({ route, navigation }: any) {
             </View>
           </View>
 
-<<<<<<< Updated upstream
-=======
           {(event.start_time || event.end_time) && (
             <View style={styles.detailItem}>
               <Ionicons name="time" size={20} color="#3B82F6" style={styles.detailIcon} />
@@ -54,8 +69,6 @@ export default function EventDetailScreen({ route, navigation }: any) {
               </View>
             </View>
           )}
-
->>>>>>> Stashed changes
           {event.distance && (
             <View style={styles.detailItem}>
               <Ionicons name="location" size={20} color="#3B82F6" style={styles.detailIcon} />
@@ -91,8 +104,6 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
       {/* Botón de retorno */}
       <View style={styles.actions}>
-<<<<<<< Updated upstream
-=======
         <View style={styles.actionRow}>
           <TouchableOpacity 
             style={[styles.actionButton, styles.editButton]}
@@ -108,16 +119,11 @@ export default function EventDetailScreen({ route, navigation }: any) {
           </TouchableOpacity>
         </View>
 
->>>>>>> Stashed changes
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-<<<<<<< Updated upstream
-          <Text style={styles.backButtonText}>Volver</Text>
-=======
           <Text style={styles.backButtonText}><Ionicons name="arrow-back" size={16} color="#CBD5E1" /> Volver al Mapa</Text>
->>>>>>> Stashed changes
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -204,8 +210,6 @@ const styles = StyleSheet.create({
   actions: {
     marginBottom: 40,
   },
-<<<<<<< Updated upstream
-=======
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -241,7 +245,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
   },
->>>>>>> Stashed changes
   backButton: {
     backgroundColor: 'transparent',
     padding: 16,

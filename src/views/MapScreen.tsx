@@ -1,196 +1,59 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, TouchableOpacity, ScrollView, TextInput, Image } from 'react-native';
-import { useLocation } from '../hooks/useLocation';
-import { useEvents } from '../hooks/useEvents';
-import { useSpots } from '../hooks/useSpots';
-import { Event, TouristSpot } from '../types';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  ActivityIndicator,
+  TextInput,
+  ScrollView
+} from 'react-native';
 import MapComponent from '../components/MapComponent';
 import { EventCard } from '../components/EventCard';
+import { useEvents } from '../hooks/useEvents';
+import { useSpots } from '../hooks/useSpots';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 
 export default function MapScreen({ navigation }: any) {
-  const { location, errorMsg, isLoading: isLoadingLocation } = useLocation();
-  const { events, loadNearbyEvents, isLoadingEvents } = useEvents();
-  const { spots } = useSpots();
+  const { events, isLoadingEvents, loadAllEvents } = useEvents();
+  const { spots, loadSpots } = useSpots();
 
-  // Ref para controlar que la carga automática solo ocurra una vez
-  const hasLoadedEvents = React.useRef(false);
+  const [userCoords, setUserCoords] = useState<{latitude: number; longitude: number} | null>(null);
+  const [mapClickMode, setMapClickMode] = useState<'walk' | 'create'>('walk');
+  const [showEventList, setShowEventList] = useState(false);
 
-<<<<<<< Updated upstream
-=======
-  // Ubicación del usuario simulada
-  const [simulatedCoords, setSimulatedCoords] = React.useState<{ latitude: number; longitude: number } | null>(null);
-  // Modo de click en el mapa: 'walk' (simular caminar) o 'create' (crear evento en ese punto)
-  const [mapClickMode, setMapClickMode] = React.useState<'walk' | 'create'>('walk');
-  const [showEventList, setShowEventList] = React.useState(false);
-  
-  // Alertas de eventos cercanos
-  const [alertedEvents, setAlertedEvents] = React.useState<number[]>([]);
-  const [nearbyAlertEvent, setNearbyAlertEvent] = React.useState<Event | null>(null);
-
-  // Alertas de lugares turísticos cercanos
-  const [alertedSpots, setAlertedSpots] = React.useState<number[]>([]);
-  const [nearbyAlertSpot, setNearbyAlertSpot] = React.useState<TouristSpot | null>(null);
-
-  // Inicializar la ubicación simulada con el GPS real
-  useEffect(() => {
-    if (location && !simulatedCoords) {
-      setSimulatedCoords({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude
-      });
-    }
-  }, [location, simulatedCoords]);
-
->>>>>>> Stashed changes
-  // Carga inicial de eventos cuando se obtiene la ubicación
-  useEffect(() => {
-    if (location && !hasLoadedEvents.current) {
-      hasLoadedEvents.current = true;
-      loadNearbyEvents(location.coords.latitude, location.coords.longitude);
-    }
-  }, [location, loadNearbyEvents]);
-
-  // Recargar eventos manualmente
-  const handleRefresh = () => {
-    if (location) {
-      loadNearbyEvents(location.coords.latitude, location.coords.longitude);
-    }
-  };
-
-<<<<<<< Updated upstream
-=======
-  // Fórmula de Haversine para calcular distancia en metros
-  const getDistanceMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371e3; // Radio de la Tierra en metros
-    const phi1 = lat1 * Math.PI/180;
-    const phi2 = lat2 * Math.PI/180;
-    const deltaPhi = (lat2-lat1) * Math.PI/180;
-    const deltaLambda = (lon2-lon1) * Math.PI/180;
-
-    const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
-              Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    return R * c;
-  };
-
-  // Reproducir un pitido de alerta utilizando Web Audio API
-  const playAlertSound = () => {
-    try {
-      const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (AudioContext) {
-        const ctx = new AudioContext();
-        const playTone = (delay: number, duration: number, freq: number) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
-          gain.gain.setValueAtTime(0.15, ctx.currentTime + delay);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + duration);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(ctx.currentTime + delay);
-          osc.stop(ctx.currentTime + delay + duration);
-        };
-        
-        playTone(0, 0.15, 880); // Tono 1
-        playTone(0.2, 0.15, 880); // Tono 2
-        playTone(0.4, 0.3, 1100); // Tono 3 (Más alto)
-      }
-    } catch (e) {
-      console.log('AudioContext error o bloqueado:', e);
-    }
-  };
-
-  // Comprobar eventos y lugares turísticos cercanos cuando cambia la ubicación simulada
-  useEffect(() => {
-    if (!simulatedCoords) return;
-    
-    // Buscar eventos a menos de 200 metros que no hayamos alertado en esta sesión
-    if (events.length > 0) {
-      const nearbyE = events.find(e => {
-        const dist = getDistanceMeters(simulatedCoords.latitude, simulatedCoords.longitude, e.latitude, e.longitude);
-        return dist <= 200 && !alertedEvents.includes(e.id);
-      });
-
-      if (nearbyE) {
-        setAlertedEvents(prev => [...prev, nearbyE.id]);
-        setNearbyAlertEvent(nearbyE);
-        playAlertSound();
-      }
-    }
-
-    // Buscar centros turísticos a menos de 200 metros
-    if (spots && spots.length > 0) {
-      const nearbyS = spots.find(s => {
-        const dist = getDistanceMeters(simulatedCoords.latitude, simulatedCoords.longitude, s.latitude, s.longitude);
-        return dist <= 200 && !alertedSpots.includes(s.id);
-      });
-
-      if (nearbyS) {
-        setAlertedSpots(prev => [...prev, nearbyS.id]);
-        setNearbyAlertSpot(nearbyS);
-        playAlertSound();
-      }
-    }
-  }, [simulatedCoords, events, spots, alertedEvents, alertedSpots]);
-
->>>>>>> Stashed changes
-  if (isLoadingLocation) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1E90FF" />
-        <Text style={styles.loadingText}>Obteniendo tu ubicación satelital...</Text>
-      </View>
-    );
-  }
-
-  if (errorMsg) {
-    return (
-      <View style={styles.center}>
-<<<<<<< Updated upstream
-        <Text style={styles.errorText}>⚠️ {errorMsg}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
-          <Text style={styles.retryButtonText}>Reintentar</Text>
-=======
-        <Text style={styles.errorText}><Ionicons name="warning" size={20} color="#F87171" /> {errorMsg}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
-          <Text style={styles.retryButtonText}><Ionicons name="refresh" size={16} color="#FFF" /> Reintentar</Text>
->>>>>>> Stashed changes
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-<<<<<<< Updated upstream
-=======
-
-
->>>>>>> Stashed changes
+  // Chihuahua Centro por defecto
   const initialRegion = {
-    latitude: location?.coords.latitude ?? 28.6353,
-    longitude: location?.coords.longitude ?? -106.0889,
-    latitudeDelta: 0.035,
-    longitudeDelta: 0.035,
+    latitude: 28.6353,
+    longitude: -106.0889,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
   };
 
-  const userCoords = location ? {
-    latitude: location.coords.latitude,
-    longitude: location.coords.longitude
-  } : null;
+  useEffect(() => {
+    loadAllEvents();
+    loadSpots();
+  }, []);
 
-  const handleSelectEvent = (event: Event) => {
+  const handleRefresh = async () => {
+    await loadAllEvents();
+    await loadSpots();
+  };
+
+  const handleSelectEvent = (event: any) => {
     navigation.navigate('EventDetail', { event });
   };
 
-  // Cuando tocan una coordenada en el mapa libre, abrimos la pantalla de creación con esa coordenada
   const handleMapPress = (coords: { latitude: number; longitude: number }) => {
-    navigation.navigate('CreateEvent', {
-      latitude: coords.latitude,
-      longitude: coords.longitude
-    });
+    if (mapClickMode === 'walk') {
+      // Futura implementación de caminata
+    } else {
+      navigation.navigate('CreateEvent', {
+        latitude: coords.latitude,
+        longitude: coords.longitude
+      });
+    }
   };
 
   return (
@@ -205,16 +68,6 @@ export default function MapScreen({ navigation }: any) {
         onMapPress={handleMapPress}
       />
 
-<<<<<<< Updated upstream
-      {/* Título y estado flotante superior */}
-      <View style={styles.headerOverlay}>
-        <Text style={styles.headerTitle}>EventMap Chihuahua</Text>
-        <Text style={styles.headerSubtitle}>
-          {events.length} {events.length === 1 ? 'evento encontrado' : 'eventos encontrados'} a la redonda
-        </Text>
-      </View>
-
-=======
       {/* HEADER SUPERIOR */}
       <View style={styles.topHeaderCard}>
         <View style={styles.headerLeft}>
@@ -250,7 +103,7 @@ export default function MapScreen({ navigation }: any) {
                 {spots.map((spot, idx) => (
                   <EventCard 
                     key={`sp-${spot.id || idx}`} 
-                    event={{...spot, date: 'Abierto al público', category: 'Turismo', distance: spot.description} as any}
+                    event={{...spot, date: spot.start_time ? `${spot.start_time} - ${spot.end_time}` : 'Abierto al público', category: 'Turismo', distance: spot.description} as any}
                   />
                 ))}
               </>
@@ -292,64 +145,11 @@ export default function MapScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* Alerta de proximidad Modal flotante para Lugares Turísticos */}
-      {nearbyAlertSpot && (
-        <View style={styles.alertOverlay}>
-          <View style={styles.alertBox}>
-            <Ionicons name="camera" size={48} color="#FBBF24" style={{ marginBottom: 12 }} />
-            <Text style={styles.alertTitle}>¡Sitio Turístico Cercano!</Text>
-            <Text style={styles.alertDescription}>
-              Te encuentras a menos de 200 metros de "{nearbyAlertSpot.name}".
-            </Text>
-            <View style={styles.alertButtons}>
-              <TouchableOpacity 
-                style={[styles.alertBtnAction, styles.alertBtnClose]}
-                onPress={() => setNearbyAlertSpot(null)}
-              >
-                <Text style={styles.alertBtnCloseText}>Cerrar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Alerta de proximidad Modal flotante para Eventos */}
-      {nearbyAlertEvent && (
-        <View style={styles.alertOverlay}>
-          <View style={styles.alertBox}>
-            <Ionicons name="notifications" size={48} color="#3B82F6" style={{ marginBottom: 12 }} />
-            <Text style={styles.alertTitle}>¡Evento Cercano!</Text>
-            <Text style={styles.alertDescription}>
-              Te encuentras a menos de 200 metros de "{nearbyAlertEvent.name}".
-            </Text>
-            <View style={styles.alertButtons}>
-              <TouchableOpacity 
-                style={[styles.alertBtnAction, styles.alertBtnView]}
-                onPress={() => {
-                  const ev = nearbyAlertEvent;
-                  setNearbyAlertEvent(null);
-                  navigation.navigate('EventDetail', { event: ev });
-                }}
-              >
-                <Text style={styles.alertBtnViewText}>Ver Evento</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.alertBtnAction, styles.alertBtnClose]}
-                onPress={() => setNearbyAlertEvent(null)}
-              >
-                <Text style={styles.alertBtnCloseText}>Ignorar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
-
->>>>>>> Stashed changes
       {/* Cargador flotante secundario */}
       {isLoadingEvents && (
         <View style={styles.floatingLoader}>
           <ActivityIndicator size="small" color="#FFF" />
-          <Text style={styles.floatingText}>Buscando eventos...</Text>
+          <Text style={styles.floatingText}>Sincronizando...</Text>
         </View>
       )}
     </View>
@@ -358,11 +158,6 @@ export default function MapScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, position: 'relative', backgroundColor: '#F1F5F9' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1F5F9' },
-  loadingText: { marginTop: 12, fontSize: 16, color: '#64748B', fontWeight: '500' },
-  errorText: { fontSize: 16, color: '#EF4444', textAlign: 'center', paddingHorizontal: 20, marginBottom: 15, fontWeight: '500' },
-  retryButton: { backgroundColor: '#3B82F6', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
-  retryButtonText: { color: '#FFF', fontWeight: 'bold' },
 
   /* HEADER SUPERIOR */
   topHeaderCard: {
@@ -389,6 +184,7 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#1E3A8A', marginLeft: 10 },
+  headerRight: { flexDirection: 'row', alignItems: 'center' },
   listToggleButton: {
     backgroundColor: '#3B82F6',
     padding: 8,
@@ -456,58 +252,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-<<<<<<< Updated upstream
-  },
-  floatingText: { color: '#FFF', marginLeft: 8, fontSize: 13, fontWeight: '500' },
-  
-  actionContainer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  actionButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  listButton: {
-    backgroundColor: '#FFF',
-    flex: 1,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  createButton: {
-    backgroundColor: '#1E90FF',
-    flex: 1.2,
-    marginRight: 10,
-  },
-  refreshButton: {
-    backgroundColor: '#475569',
-    width: 48,
-    height: 48,
-    paddingVertical: 0,
-    borderRadius: 24,
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#0F172A',
-  },
-  refreshButtonText: {
-    fontSize: 16,
-  },
-=======
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
@@ -546,38 +290,21 @@ const styles = StyleSheet.create({
   segmentBtnText: { fontSize: 13, fontWeight: '600', color: '#64748B', marginLeft: 6 },
   segmentBtnTextActive: { color: '#FFF', fontWeight: 'bold' },
 
-
-
-  /* ALERTA MODAL */
-  alertOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    justifyContent: 'center', alignItems: 'center', zIndex: 999, padding: 20,
+  floatingLoader: {
+    position: 'absolute',
+    bottom: 100,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 50,
   },
-  alertBox: {
-    backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E2E8F0',
-    borderRadius: 20, padding: 24, width: '100%', maxWidth: 320, alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 10,
+  floatingText: {
+    color: '#FFF',
+    marginLeft: 10,
+    fontWeight: 'bold',
   },
-  alertTitle: { fontSize: 20, fontWeight: 'bold', color: '#0F172A', marginBottom: 8 },
-  alertDescription: { fontSize: 14, color: '#475569', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
-  alertButtons: { flexDirection: 'row', width: '100%' },
-  alertBtnAction: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginHorizontal: 6 },
-  alertBtnView: { backgroundColor: '#3B82F6' },
-  alertBtnViewText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
-  alertBtnClose: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#CBD5E1' },
-  alertBtnCloseText: { color: '#64748B', fontWeight: 'bold', fontSize: 14 },
-  
-  floatingLoader: { display: 'none' },
->>>>>>> Stashed changes
 });
-// Ajuste de color de texto específico para el botón de creación
-styles.actionButtonText = {
-  ...styles.actionButtonText,
-  color: '#0F172A', // List button text
-};
-styles.createButtonText = {
-  fontSize: 14,
-  fontWeight: 'bold',
-  color: '#FFF',
-};
