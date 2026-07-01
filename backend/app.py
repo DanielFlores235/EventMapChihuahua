@@ -44,6 +44,30 @@ def init_db():
         )
     ''')
     
+<<<<<<< Updated upstream
+=======
+    # Crear la tabla de centros turísticos
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tourist_spots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            latitude REAL NOT NULL,
+            longitude REAL NOT NULL,
+            description TEXT,
+            start_time TEXT,
+            end_time TEXT
+        )
+    ''')
+
+    # Migración automática si la tabla ya existía sin las nuevas columnas
+    cursor.execute("PRAGMA table_info(events)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if 'start_time' not in columns:
+        cursor.execute("ALTER TABLE events ADD COLUMN start_time TEXT")
+    if 'end_time' not in columns:
+        cursor.execute("ALTER TABLE events ADD COLUMN end_time TEXT")
+    
+>>>>>>> Stashed changes
     # Comprobar si hay registros. Si no los hay, sembramos datos iniciales.
     cursor.execute('SELECT COUNT(*) FROM events')
     if cursor.fetchone()[0] == 0:
@@ -59,6 +83,28 @@ def init_db():
             VALUES (?, ?, ?, ?, ?, ?)
         ''', default_events)
         conn.commit()
+
+    # Comprobar si hay centros turísticos. Si no los hay, sembramos datos iniciales.
+    cursor.execute('SELECT COUNT(*) FROM tourist_spots')
+    if cursor.fetchone()[0] == 0:
+        default_spots = [
+            ("Catedral Metropolitana", 28.6353, -106.0760, "Iglesia histórica y principal atractivo turístico en la plaza de armas.", "08:00", "20:00"),
+            ("Quinta Gameros", 28.6300, -106.0750, "Mansión porfiriana convertida en museo. Arquitectura impresionante.", "10:00", "18:00"),
+            ("Museo Pancho Villa", 28.6315, -106.0730, "Antigua casa del Centauro del Norte, hoy un museo clave de la Revolución.", "09:00", "17:00"),
+            ("Grutas de Nombre de Dios", 28.6750, -106.0500, "Cuevas milenarias subterráneas con estalactitas y estalagmitas.", "10:00", "16:00"),
+            ("Presa El Rejón", 28.6100, -106.1200, "Parque recreativo con lago, tirolesa, lanchas y pistas para correr.", "06:00", "22:00"),
+            ("Palacio de Gobierno", 28.6360, -106.0755, "Sede del poder ejecutivo estatal, con murales sobre la historia de Chihuahua y el altar a Hidalgo.", "09:00", "18:00"),
+            ("Casa Chihuahua Centro de Patrimonio Cultural", 28.6365, -106.0745, "Museo interactivo en el antiguo edificio de correos, famoso por el calabozo de Hidalgo.", "10:00", "17:00"),
+            ("Museo de la Lealtad Republicana", 28.6345, -106.0780, "También conocido como Casa Juárez, fue sede del gobierno de Benito Juárez.", "09:00", "18:00"),
+            ("Estación del Chepe", 28.6250, -106.0820, "Punto de partida del famoso tren El Chepe hacia las Barrancas del Cobre.", "05:00", "21:00"),
+            ("Parque Acueducto", 28.6150, -106.0950, "Extenso parque lineal con los restos históricos del acueducto virreinal.", "00:00", "23:59")
+        ]
+        cursor.executemany('''
+            INSERT INTO tourist_spots (name, latitude, longitude, description, start_time, end_time)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', default_spots)
+        conn.commit()
+
     conn.close()
 
 # Inicializar la base de datos al arrancar
@@ -217,6 +263,112 @@ def reverse_geocode():
         return jsonify({"error": "Coordenadas no encontradas en el mapa"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/spots', methods=['GET'])
+def get_all_spots():
+    """Obtener todos los centros turísticos registrados."""
+    conn = get_db_connection()
+    spots = conn.execute('SELECT * FROM tourist_spots ORDER BY name ASC').fetchall()
+    conn.close()
+    return jsonify([dict(s) for s in spots])
+
+@app.route('/spots', methods=['POST'])
+def create_spot():
+    """Registrar un nuevo centro turístico."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Datos inválidos o faltantes"}), 400
+
+    name = data.get('name')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    description = data.get('description')
+    start_time = data.get('start_time')
+    end_time = data.get('end_time')
+
+    if not name or latitude is None or longitude is None:
+        return jsonify({"error": "Nombre, latitud y longitud son obligatorios"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO tourist_spots (name, latitude, longitude, description, start_time, end_time)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (name, latitude, longitude, description, start_time, end_time))
+    conn.commit()
+    new_id = cursor.lastrowid
+    conn.close()
+
+    new_spot = {
+        "id": new_id,
+        "name": name,
+        "latitude": latitude,
+        "longitude": longitude,
+        "description": description,
+        "start_time": start_time,
+        "end_time": end_time
+    }
+    return jsonify(new_spot), 201
+
+@app.route('/spots/<int:spot_id>', methods=['PUT'])
+def update_spot(spot_id):
+    """Actualizar un centro turístico existente."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Datos inválidos o faltantes"}), 400
+
+    name = data.get('name')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    description = data.get('description')
+    start_time = data.get('start_time')
+    end_time = data.get('end_time')
+
+    if not name or latitude is None or longitude is None:
+        return jsonify({"error": "Nombre, latitud y longitud son obligatorios"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM tourist_spots WHERE id = ?', (spot_id,))
+    spot = cursor.fetchone()
+    if not spot:
+        conn.close()
+        return jsonify({"error": "Lugar turístico no encontrado"}), 404
+
+    cursor.execute('''
+        UPDATE tourist_spots
+        SET name = ?, latitude = ?, longitude = ?, description = ?, start_time = ?, end_time = ?
+        WHERE id = ?
+    ''', (name, latitude, longitude, description, start_time, end_time, spot_id))
+    conn.commit()
+    conn.close()
+
+    updated_spot = {
+        "id": spot_id,
+        "name": name,
+        "latitude": latitude,
+        "longitude": longitude,
+        "description": description,
+        "start_time": start_time,
+        "end_time": end_time
+    }
+    return jsonify(updated_spot), 200
+
+@app.route('/spots/<int:spot_id>', methods=['DELETE'])
+def delete_spot(spot_id):
+    """Eliminar un centro turístico existente."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM tourist_spots WHERE id = ?', (spot_id,))
+    spot = cursor.fetchone()
+    if not spot:
+        conn.close()
+        return jsonify({"error": "Lugar turístico no encontrado"}), 404
+
+    cursor.execute('DELETE FROM tourist_spots WHERE id = ?', (spot_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "Lugar turístico eliminado correctamente"}), 200
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

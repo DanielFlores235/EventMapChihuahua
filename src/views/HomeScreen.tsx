@@ -7,6 +7,7 @@ import {
   Text, 
   TouchableOpacity 
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { EventCard } from '../components/EventCard';
 import { useEvents } from '../hooks/useEvents';
 import { useLocation } from '../hooks/useLocation';
@@ -34,7 +35,7 @@ export default function HomeScreen({ navigation }: any) {
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>📍</Text>
+      <Ionicons name="location" size={50} color="#3B82F6" style={{ marginBottom: 15 }} />
       <Text style={styles.emptyTitle}>Sin eventos a la redonda</Text>
       <Text style={styles.emptyText}>
         No encontramos eventos a menos de 10 km de tu ubicación. ¡Crea el primer evento para comenzar!
@@ -69,7 +70,7 @@ export default function HomeScreen({ navigation }: any) {
           style={styles.addButton}
           onPress={() => navigation.navigate('CreateEvent')}
         >
-          <Text style={styles.addButtonText}>➕ Crear</Text>
+          <Text style={styles.addButtonText}><Ionicons name="add" size={16} color="#FFF" /> Crear</Text>
         </TouchableOpacity>
       </View>
 
@@ -95,16 +96,16 @@ export default function HomeScreen({ navigation }: any) {
         onPress={() => navigation.navigate('Map')}
         activeOpacity={0.8}
       >
-        <Text style={styles.mapFloatingButtonText}>🗺️ Ver en Mapa</Text>
+        <Text style={styles.mapFloatingButtonText}><Ionicons name="map" size={16} color="#FFF" /> Ver en Mapa</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
-  loadingText: { marginTop: 12, fontSize: 15, color: '#64748B', fontWeight: '500' },
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0F172A' },
+  loadingText: { marginTop: 12, fontSize: 15, color: '#94A3B8', fontWeight: '500' },
   
   headerContainer: {
     flexDirection: 'row',
@@ -113,23 +114,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
-    backgroundColor: '#FFF',
+    backgroundColor: '#1E293B',
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: '#334155',
   },
-  header: { fontSize: 24, fontWeight: 'bold', color: '#0F172A' },
-  subHeader: { fontSize: 13, color: '#64748B', marginTop: 2 },
+  header: { fontSize: 24, fontWeight: 'bold', color: '#F8FAFC' },
+  subHeader: { fontSize: 13, color: '#94A3B8', marginTop: 2 },
   
   addButton: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#3B82F6',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#3B82F6',
   },
   addButtonText: {
-    color: '#1D4ED8',
+    color: '#FFF',
     fontWeight: 'bold',
     fontSize: 14,
   },
@@ -144,17 +145,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingVertical: 60,
   },
-  emptyIcon: { fontSize: 50, marginBottom: 15 },
-  emptyTitle: { fontSize: 18, fontWeight: 'bold', color: '#1E293B', marginBottom: 8 },
-  emptyText: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  emptyTitle: { fontSize: 18, fontWeight: 'bold', color: '#F8FAFC', marginBottom: 8 },
+  emptyText: { fontSize: 14, color: '#CBD5E1', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   emptyButton: {
-    backgroundColor: '#1E90FF',
+    backgroundColor: '#3B82F6',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 10,
-    shadowColor: '#1E90FF',
+    shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 3,
   },
@@ -165,15 +165,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     alignSelf: 'center',
-    backgroundColor: '#0F172A',
+    backgroundColor: '#3B82F6',
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 6,
   },
