@@ -52,9 +52,17 @@ export const getEventsByCategory = async (category: string): Promise<Event[]> =>
  * Geocodificación directa: Convierte un texto a coordenadas usando OpenStreetMap Nominatim
  */
 export const geocodeAddress = async (address: string): Promise<{ latitude: number, longitude: number, address: string }> => {
-  // Se recomienda incluir "Chihuahua" para priorizar resultados locales si es específico de la ciudad
-  const query = address.toLowerCase().includes('chihuahua') ? address : `${address}, Chihuahua`;
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
+  let query = address.trim();
+  if (!query.toLowerCase().includes('chihuahua')) {
+    query = `${query}, Chihuahua`;
+  }
+  if (!query.toLowerCase().includes('mexico') && !query.toLowerCase().includes('méxico')) {
+    query = `${query}, Mexico`;
+  }
+  
+  // Bounding box aproximado de la zona urbana de Chihuahua para forzar resultados locales
+  const viewbox = "-106.20,28.80,-105.90,28.50"; 
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&viewbox=${viewbox}&bounded=1`;
   
   const response = await fetch(url, { headers: { 'User-Agent': 'EventMapChihuahuaApp/1.0' } });
   const data = await response.json();
